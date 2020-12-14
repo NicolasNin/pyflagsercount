@@ -11,7 +11,8 @@
 #include <deque>
 #include <sstream>
 #include <cmath>
-#include <array>
+// we include array for mac
+#include <array> 
 #include <google/dense_hash_map>
 
 //##############################################################################

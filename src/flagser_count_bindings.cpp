@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <iostream>
-
 #include "filtered_flagser-count.cpp"
-
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(pyflagsercontain2, m) {
+PYBIND11_MODULE(pyflagsercontain, m) {
 
   m.doc() = "Python interface for flagser_count";
 
