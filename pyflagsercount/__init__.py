@@ -2,7 +2,7 @@
 
 import numpy as np
 import scipy.sparse as sparse
-from .pyflagsercontain import compute_cell_count,compute_cell_count_filtered,compute_cell_count_maximal
+from .pyflagsercount import compute_cell_count,compute_cell_count_filtered,compute_cell_count_maximal
 
 def listoflistToarray(l):
     """ convert a list of list of number as a numpy array, fill with 0 when a list has not the same size"""

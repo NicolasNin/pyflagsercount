@@ -24,7 +24,7 @@ target_link_libraries(flagser-count-filtered PRIVATE Threads::Threads)
 
 #flagser-contain binding with pybind11
 add_subdirectory(pybind11)
-pybind11_add_module(pyflagsercontain src/flagser_count_bindings.cpp)
+pybind11_add_module(pyflagsercount src/flagser_count_bindings.cpp)
 
 
 

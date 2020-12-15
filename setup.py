@@ -65,13 +65,13 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 setup(
-    name='pyflagsercontain',
+    name='pyflagsercount',
     version='0.0.1',
     author='Jason P. Smith',
     description='A pybind11 wrapper for a version of flagser that returns the number of directed cliques each vertex belongs to',
-    ext_modules=[CMakeExtension('pyflagsercontain/pyflagsercontain')],
+    ext_modules=[CMakeExtension('pyflagsercount/pyflagsercount')],
     cmdclass=dict(build_ext=CMakeBuild),
-    packages=["pyflagsercontain"],
+    packages=["pyflagsercount"],
     zip_safe=False,
     install_requires=["numpy>=1.19.4",
                       "scipy>=1.5.4",]
