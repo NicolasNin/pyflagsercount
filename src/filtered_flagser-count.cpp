@@ -412,6 +412,7 @@ std::vector<std::vector<vertex_index_t>> filtered_count_cells(compressed_directe
 		}
 	return contain_counts[0];
 }
+/*
 int main(int argc, char** argv) {
 	std::cout<<"test"<<std::endl;
     auto graph = directed_graph_t(10);
@@ -455,3 +456,4 @@ int main(int argc, char** argv) {
 				std::cout<<std::endl;
 			}
 		}
+*/

@@ -20,7 +20,9 @@ typedef uint64_t vertex_index_t;
 typedef int64_t index_t;
 typedef float value_t;
 
+#ifndef PARALLEL_THREADS
 #define PARALLEL_THREADS 8
+#endif
 
 
 
@@ -33,7 +35,7 @@ bool is_not_in(vertex_index_t el,vertex_index_t l[],unsigned short l_size){
 	}
 	return 1;
 }
-class directed_graph_t {
+class directed_graphv2_t {
 public:
 	// The filtration values of the vertices
 	vertex_index_t number_of_vertices;
@@ -43,11 +45,12 @@ public:
 	std::deque<size_t> incidence_outgoing;
 	size_t incidence_row_length;
 
-	// we store the transpose for maximal simplices
+	//we store the transpose for maximal simplices
+	//really not necessary but easier this way, we should change this in the future
 	std::deque<size_t> incidence_ingoing;
 	size_t incidence_col_length;
 	// Assume by default that the edge density will be roughly one percent
-	directed_graph_t(vertex_index_t _number_of_vertices, bool _transpose=false, float density_hint = 0.01)
+	directed_graphv2_t(vertex_index_t _number_of_vertices, bool _transpose=false, float density_hint = 0.01)
 	    : number_of_vertices(_number_of_vertices), transpose(_transpose), incidence_row_length((_number_of_vertices >> 6) + 1), incidence_col_length((_number_of_vertices >> 6) + 1) {
 		incidence_outgoing.resize(incidence_row_length * _number_of_vertices, 0);
 		incidence_ingoing.resize(incidence_col_length * _number_of_vertices, 0);
@@ -81,6 +84,7 @@ public:
 	}
 
 	std::vector<vertex_index_t> get_out(vertex_index_t from) const {
+		// get all the vertices v coonnected to from as from->v
 		std::vector<vertex_index_t> outvertices;
 		for (size_t offset = 0; offset < this->incidence_row_length; offset++) {
 			size_t bits = this->get_outgoing_chunk(from, offset);
@@ -120,7 +124,7 @@ public:
 	bool vertex_in_between(	vertex_index_t simplex[],unsigned short  simplex_size) const{
 		
 		//for (int i=0;i<simplex_size;i++) std::cout<< simplex[i]<< " : ";
-		std::cout<<std::endl;
+		//std::cout<<std::endl;
 		std::vector<vertex_index_t> candidates;
 		std::vector<vertex_index_t> out_start = this->get_out(simplex[0]);
 		vertex_index_t end = simplex[simplex_size-1];
@@ -160,10 +164,10 @@ public:
 //##############################################################################
 //DIRECTED FLAG COMPLEX CLASS
 
-class directed_flag_complex_t {
+class directed_flag_complex_max_t {
 public:
-	const directed_graph_t& graph;
-	directed_flag_complex_t(const directed_graph_t& _graph) : graph(_graph) {}
+	const directed_graphv2_t& graph;
+	directed_flag_complex_max_t(const directed_graphv2_t& _graph) : graph(_graph) {}
 
 public:
 	template <typename Func> void for_each_cell(Func& f, std::vector<vertex_index_t>& do_vertices, std::vector<std::vector<std::vector<vertex_index_t>>>& contain_counts, int min_dimension, int max_dimension = -1) {
@@ -177,7 +181,7 @@ public:
 		std::thread t[number_of_threads - 1];
 
 		for (size_t index = 0; index < number_of_threads - 1; ++index)
-			t[index] = std::thread(&directed_flag_complex_t::worker_thread<Func>, this, number_of_threads, index,
+			t[index] = std::thread(&directed_flag_complex_max_t::worker_thread<Func>, this, number_of_threads, index,
 			                       fs[index], min_dimension, max_dimension, std::ref(do_vertices), std::ref(contain_counts));
 
 		// Also do work in this thread, namely the last bit
@@ -287,27 +291,7 @@ private:
 //##############################################################################
 //CELL COUNTER STRUCT
 
-struct cell_counter_t {
-	void done() {}
-	void operator()(vertex_index_t* first_vertex, int size) {
-		// Add (-1)^size to the Euler characteristic
-		if (size & 1)
-			ec++;
-		else
-			ec--;
-
-		if (cell_counts.size() < size) { cell_counts.resize(size, 0); }
-		cell_counts[size - 1]++;
-	}
-
-	int64_t euler_characteristic() const { return ec; }
-	std::vector<size_t> cell_count() const { return cell_counts; }
-
-private:
-	int64_t ec = 0;
-	std::vector<size_t> cell_counts;
-};
-// we modify a tiny bit the previous struct so that there is two counter one for maximal and one for the rest
+// we modify a tiny bit the  cell_counter_t previous struct so that there is two counter one for maximal and one for the rest
 struct cell_counter_max_t {
 	void done() {}
 	void operator()(vertex_index_t* first_vertex, int size, bool is_max) {
@@ -339,14 +323,13 @@ private:
 //##############################################################################
 //COUNT CELL FUNCTION
 
-std::vector<std::vector<vertex_index_t>> count_cells(directed_graph_t& graph) {
-	directed_flag_complex_t complex(graph);
-
+std::vector<std::vector<size_t>> count_cells_max(directed_graphv2_t& graph) {
+	directed_flag_complex_max_t complex(graph);
 
    std::vector<vertex_index_t> do_vertices;
    for(int i = 0; i < graph.vertex_number(); i++){ do_vertices.push_back(i); }
 
-
+	//TODO REMOVE CONTAINS everywhere
     std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_THREADS,
 			                                                     std::vector<std::vector<vertex_index_t>>(graph.vertex_number(),
 																														std::vector<vertex_index_t>(0)));
@@ -356,36 +339,64 @@ std::vector<std::vector<vertex_index_t>> count_cells(directed_graph_t& graph) {
 		cell_counter[i] = new cell_counter_max_t();
 
 		complex.for_each_cell(cell_counter, do_vertices, contain_counts, 0, 10000);
+	
+	std::vector<size_t> total_counts;
+	std::vector<size_t> total_max_counts;
+	for (int i=0;i<PARALLEL_THREADS;i++){
+		std::vector<size_t> counti = cell_counter[i]->cell_count();
+		if (total_counts.size()<counti.size()) { total_counts.resize(counti.size(), 0); }
+		for (int j=0;j<counti.size();j++){ total_counts[j]+=counti[j]; }
 
+		std::vector<size_t> count_maxi = cell_counter[i]->cell_max_count();
+		if (total_max_counts.size()<count_maxi.size()) { total_max_counts.resize(count_maxi.size(), 0); }
+		for (int j=0;j<count_maxi.size();j++){ total_max_counts[j]+=count_maxi[j]; }
 
-    for(int i = 1; i < contain_counts.size(); i++){
-        for(int j = 0; j < contain_counts[i].size(); j++){
-            while(contain_counts[0][j].size() < contain_counts[i][j].size()){
-                contain_counts[0][j].push_back(0);
-            }
-            for(int k = 0; k < contain_counts[i][j].size(); k++){
-                contain_counts[0][j][k] += contain_counts[i][j][k];
-            }
-        }
-    }
+	}
 
-	return contain_counts[0];
+	std::cout<<"* Total SIMPLICES"<<std::endl;
+	for (int i=0; i<PARALLEL_THREADS; i++){
+		std::cout<< i<< ": ";
+		std::vector<size_t> counti = cell_counter[i]->cell_count();
+		for (int j=0;j<counti.size();j++)
+			std::cout<< counti[j]<< " ";
+		std::cout<< std::endl;
+	}
+	for (int i=0;i<total_counts.size();i++){std::cout<< total_counts[i]<<" ";}
+
+	std::cout<<std::endl<<"* MAXIMAL SIMPLICES"<<std::endl;
+		for (int i=0; i<PARALLEL_THREADS; i++){
+		std::cout<< i<< ": ";
+		std::vector<size_t> counti = cell_counter[i]->cell_max_count();
+		for (int j=0;j<counti.size();j++)
+			std::cout<< counti[j]<< " ";
+		std::cout<< std::endl;
+	}
+	for (int i=0;i<total_max_counts.size();i++){std::cout<< total_max_counts[i]<<" ";}
+	std::cout<<std::endl;
+	std::vector<std::vector<size_t>> ret;
+	ret.push_back(total_counts);
+	ret.push_back(total_max_counts);
+	
+	return ret;
 }
+/*
 
 int main(int argc, char** argv){
 
-	std::cout<< "START"<<std::endl;
 
 	int N=3;
-	auto graph = directed_graph_t(N);
+	auto graph = directed_graphv2_t(N);
 
-	std::vector<vertex_index_t> row{0,0,1};
-	std::vector<vertex_index_t> col{1,2,2};
+	//std::vector<vertex_index_t> row{0,0,1};
+	//std::vector<vertex_index_t> col{1,2,2};
+	// undirected triangle
+	std::vector<vertex_index_t> row{0,1,2};
+	std::vector<vertex_index_t> col{1,2,0};
 	std::vector<vertex_index_t> data{1,8,1};
 	for (int i=0;i<3;i++)
 		graph.add_edge(row[i],col[i]);
 
-
+	std::cout<< "Matrix"<<std::endl;
 	for (vertex_index_t i=0;i<3;i++){
 		for (vertex_index_t j=0;j<3;j++){
 			if (graph.is_connected_by_an_edge(i,j))
@@ -394,15 +405,19 @@ int main(int argc, char** argv){
 			}
 	std::cout<<std::endl;
 	}
+	std::cout<< "------------------"<<std::endl;
+	std::vector<std::vector<size_t>> a =  count_cells_max(graph);
+
+	
 	auto out0=graph.get_in(2);
 	std::cout<<"OUT 0" <<std::endl;
 	for (int i=0;i<out0.size();i++)
 		std::cout<< out0[i]<< " ";
 	std::cout<< std::endl;
-
-	std::cout<<"BUILD COMPLEX "<<std::endl;
-	directed_flag_complex_t complex(graph);
+	
+	directed_flag_complex_max_t complex(graph);
 	std::vector<vertex_index_t> do_vertices;
+	//TODO REMOVE CONTAINS everywhere
    for(int i = 0; i < graph.vertex_number(); i++){ do_vertices.push_back(i); }
 	std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_THREADS,
 			                                                     std::vector<std::vector<vertex_index_t>>(graph.vertex_number(),
@@ -412,8 +427,10 @@ int main(int argc, char** argv){
 	for (int i = 0; i < PARALLEL_THREADS; i++)
 		cell_counter[i] = new cell_counter_max_t();
 
+	
 	complex.for_each_cell(cell_counter, do_vertices, contain_counts, 0, 10000);
-
+	
+	std::cout<<"* Total SIMPLICES"<<std::endl;
 	for (int i=0; i<PARALLEL_THREADS; i++){
 		std::cout<< i<< ": ";
 		std::vector<size_t> counti = cell_counter[i]->cell_count();
@@ -421,7 +438,7 @@ int main(int argc, char** argv){
 			std::cout<< counti[j]<< " ";
 		std::cout<< std::endl;
 	}
-	std::cout<<" MAXIMAL SIMPLICES"<<std::endl;
+	std::cout<<"* MAXIMAL SIMPLICES"<<std::endl;
 		for (int i=0; i<PARALLEL_THREADS; i++){
 		std::cout<< i<< ": ";
 		std::vector<size_t> counti = cell_counter[i]->cell_max_count();
@@ -430,3 +447,4 @@ int main(int argc, char** argv){
 		std::cout<< std::endl;
 	}
 }
+*/

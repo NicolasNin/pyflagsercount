@@ -2,7 +2,7 @@
 
 import numpy as np
 import scipy.sparse as sparse
-from .pyflagsercontain import compute_cell_count,compute_cell_count_filtered
+from .pyflagsercontain import compute_cell_count,compute_cell_count_filtered,compute_cell_count_maximal
 
 def listoflistToarray(l):
     """ convert a list of list of number as a numpy array, fill with 0 when a list has not the same size"""
@@ -37,6 +37,11 @@ def flagser_contain(adjacency_matrix):
     N=adjacency_matrix.shape[0]
     row,col=convertCOO(adjacency_matrix,ret_data=False)
     return compute_cell_count(N, np.transpose(np.array( (row,col))))
+
+def flagser_maximal(adjacency_matrix):
+    N=adjacency_matrix.shape[0]
+    row,col=convertCOO(adjacency_matrix,ret_data=False)
+    return compute_cell_count_maximal(N, np.transpose(np.array( (row,col))))
 
 def flagser_filtered(adjacency_matrix, return_as_array=True):
     """
