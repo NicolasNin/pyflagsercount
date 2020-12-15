@@ -12,6 +12,7 @@
 #include <sstream>
 #include <cmath>
 #include <array>
+#include <algorithm>
 
 //##############################################################################
 // DEFINITIONS
@@ -26,6 +27,12 @@ typedef float value_t;
 //##############################################################################
 //DIRECTED GRAPH CLASS
 
+bool is_not_in(vertex_index_t el,vertex_index_t l[],unsigned short l_size){
+	for (int i=0;i<l_size;i++) {
+		if (l[i]==el) return 0;
+	}
+	return 1;
+}
 class directed_graph_t {
 public:
 	// The filtration values of the vertices
@@ -72,6 +79,82 @@ public:
 	size_t get_ingoing_chunk(vertex_index_t from, size_t chunk_number) const {
 		return incidence_ingoing[incidence_col_length * from + chunk_number];
 	}
+
+	std::vector<vertex_index_t> get_out(vertex_index_t from) const {
+		std::vector<vertex_index_t> outvertices;
+		for (size_t offset = 0; offset < this->incidence_row_length; offset++) {
+			size_t bits = this->get_outgoing_chunk(from, offset);
+
+			size_t vertex_offset = offset << 6;
+			while (bits > 0) {
+				// Get the least significant non-zero bit
+				int b = __builtin_ctzl(bits);
+
+				// Unset this bit
+				bits &= ~(1UL << b);
+
+				outvertices.push_back(vertex_offset + b);
+				}
+			}
+		return outvertices;
+		}
+
+	std::vector<vertex_index_t> get_in(vertex_index_t to) const {
+		std::vector<vertex_index_t> invertices;
+		for (size_t offset = 0; offset < this->incidence_row_length; offset++) {
+			size_t bits = this->get_ingoing_chunk(to, offset);
+
+			size_t vertex_offset = offset << 6;
+			while (bits > 0) {
+				// Get the least significant non-zero bit
+				int b = __builtin_ctzl(bits);
+
+				// Unset this bit
+				bits &= ~(1UL << b);
+
+				invertices.push_back(vertex_offset + b);
+				}
+			}
+		return invertices;
+		}
+	bool vertex_in_between(	vertex_index_t simplex[],unsigned short  simplex_size) const{
+		
+		//for (int i=0;i<simplex_size;i++) std::cout<< simplex[i]<< " : ";
+		std::cout<<std::endl;
+		std::vector<vertex_index_t> candidates;
+		std::vector<vertex_index_t> out_start = this->get_out(simplex[0]);
+		vertex_index_t end = simplex[simplex_size-1];
+		for (int i=0;i<out_start.size();i++){
+			if (is_not_in(out_start[i],simplex,simplex_size ) ){
+				if (this->is_connected_by_an_edge(out_start[i],end)){ 
+					candidates.push_back(out_start[i]);}}
+		}
+
+		if (candidates.size()<= 0) return 0;
+		// if we found one candidate and its
+		if (simplex_size == 2) return 1;
+
+		for (int i=0;i<candidates.size();i++){
+			vertex_index_t c = candidates[i];
+			bool do_in = 1;
+			bool found = 1;
+			for (int i=1;i< simplex_size-1;i++){
+					if ( do_in && not this->is_connected_by_an_edge(simplex[i],c))
+					{
+						if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
+						do_in=0;
+					}
+					else
+					{
+						if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
+					}
+					
+				}
+				if (found) return 1;
+		}
+		// if no candidate is good return false
+		return 0;
+	}		
 };
 
 //##############################################################################
@@ -117,7 +200,9 @@ private:
 
 		vertex_index_t prefix[max_dimension + 1];
 
-		do_for_each_cell(f, min_dimension, max_dimension, first_position_vertices, prefix, 0, thread_id, do_vertices.size(), contain_counts);
+		std::vector<vertex_index_t> possible_prev_vertices;
+
+		do_for_each_cell(f, min_dimension, max_dimension, first_position_vertices, prefix, 0, thread_id, do_vertices.size(), contain_counts, possible_prev_vertices);
 
 		f->done();
 	}
@@ -125,12 +210,28 @@ private:
 	template <typename Func>
 	void do_for_each_cell(Func* f, int min_dimension, int max_dimension,
 	                      const std::vector<vertex_index_t>& possible_next_vertices, vertex_index_t* prefix,
-	                      unsigned short prefix_size, int thread_id, size_t number_of_vertices, std::vector<std::vector<std::vector<vertex_index_t>>>& contain_counts) {
+	                      unsigned short prefix_size, int thread_id, size_t number_of_vertices, std::vector<std::vector<std::vector<vertex_index_t>>>& contain_counts,
+						  const std::vector<vertex_index_t>& possible_prev_vertices) {
 		// As soon as we have the correct dimension, execute f
 		bool is_max = 0;
+		
+		if (prefix_size>0 && possible_prev_vertices.size()==0 && possible_next_vertices.size()==0 && not graph.vertex_in_between(prefix,prefix_size))	is_max=1;
+	
+		/*		
+		if (is_max == 1){ 
+		std::cout<< "IS MAX ?"<<std::endl;
+		std::cout<< "prefix size "<<prefix_size  <<std::endl;
+		
+			for (auto i =0;i<prefix_size;i++){
+				std::cout<< prefix[i]<< " " ; 
+				}
+				std::cout<<std::endl;
+			}
+		*/
 		if (prefix_size >= min_dimension + 1) {
 			 (*f)(prefix, prefix_size,is_max); 
 			 }
+		
 
 		// If this is the last dimension we are interested in, exit this branch
 		if (prefix_size == max_dimension + 1) return;
@@ -142,29 +243,42 @@ private:
 
 			// And compute the next elements
 			std::vector<vertex_index_t> new_possible_vertices;
+			std::vector<vertex_index_t> new_possible_prev_vertices;
+
 			if (prefix_size > 0) {
 				for (auto v : possible_next_vertices) {
 					if (vertex != v && graph.is_connected_by_an_edge(vertex, v)) new_possible_vertices.push_back(v);
+
+					for (auto vprev : possible_prev_vertices) 
+					if (vertex != vprev && graph.is_connected_by_an_edge(vprev, vertex)) new_possible_prev_vertices.push_back(vprev);
+
 				}
 			} else {
 				// Get outgoing vertices of v in chunks of 64
 				for (size_t offset = 0; offset < graph.incidence_row_length; offset++) {
 					size_t bits = graph.get_outgoing_chunk(vertex, offset);
+					// we repeat everything for ingoing
+					size_t inbits = graph.get_ingoing_chunk(vertex, offset);
 
 					size_t vertex_offset = offset << 6;
 					while (bits > 0) {
 						// Get the least significant non-zero bit
 						int b = __builtin_ctzl(bits);
-
 						// Unset this bit
 						bits &= ~(1UL << b);
-
 						new_possible_vertices.push_back(vertex_offset + b);
+					}
+					while (inbits > 0) {
+						// Get the least significant non-zero bit
+						int b = __builtin_ctzl(inbits);
+						// Unset this bit
+						inbits &= ~(1UL << b);
+						new_possible_prev_vertices.push_back(vertex_offset + b);
 					}
 				}
 			}
 
-            do_for_each_cell(f, min_dimension, max_dimension, new_possible_vertices, prefix, prefix_size + 1, thread_id, number_of_vertices, contain_counts);
+            do_for_each_cell(f, min_dimension, max_dimension, new_possible_vertices, prefix, prefix_size + 1, thread_id, number_of_vertices, contain_counts, new_possible_prev_vertices);
 		}
 	}
 };
@@ -193,6 +307,7 @@ private:
 	int64_t ec = 0;
 	std::vector<size_t> cell_counts;
 };
+// we modify a tiny bit the previous struct so that there is two counter one for maximal and one for the rest
 struct cell_counter_max_t {
 	void done() {}
 	void operator()(vertex_index_t* first_vertex, int size, bool is_max) {
@@ -213,6 +328,7 @@ struct cell_counter_max_t {
 
 	int64_t euler_characteristic() const { return ec; }
 	std::vector<size_t> cell_count() const { return cell_counts; }
+	std::vector<size_t> cell_max_count() const { return cell_max_counts; }
 
 private:
 	int64_t ec = 0;
@@ -278,5 +394,39 @@ int main(int argc, char** argv){
 			}
 	std::cout<<std::endl;
 	}
-	
+	auto out0=graph.get_in(2);
+	std::cout<<"OUT 0" <<std::endl;
+	for (int i=0;i<out0.size();i++)
+		std::cout<< out0[i]<< " ";
+	std::cout<< std::endl;
+
+	std::cout<<"BUILD COMPLEX "<<std::endl;
+	directed_flag_complex_t complex(graph);
+	std::vector<vertex_index_t> do_vertices;
+   for(int i = 0; i < graph.vertex_number(); i++){ do_vertices.push_back(i); }
+	std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_THREADS,
+			                                                     std::vector<std::vector<vertex_index_t>>(graph.vertex_number(),
+																														std::vector<vertex_index_t>(0)));
+
+	std::array<cell_counter_max_t*, PARALLEL_THREADS> cell_counter;
+	for (int i = 0; i < PARALLEL_THREADS; i++)
+		cell_counter[i] = new cell_counter_max_t();
+
+	complex.for_each_cell(cell_counter, do_vertices, contain_counts, 0, 10000);
+
+	for (int i=0; i<PARALLEL_THREADS; i++){
+		std::cout<< i<< ": ";
+		std::vector<size_t> counti = cell_counter[i]->cell_count();
+		for (int j=0;j<counti.size();j++)
+			std::cout<< counti[j]<< " ";
+		std::cout<< std::endl;
+	}
+	std::cout<<" MAXIMAL SIMPLICES"<<std::endl;
+		for (int i=0; i<PARALLEL_THREADS; i++){
+		std::cout<< i<< ": ";
+		std::vector<size_t> counti = cell_counter[i]->cell_max_count();
+		for (int j=0;j<counti.size();j++)
+			std::cout<< counti[j]<< " ";
+		std::cout<< std::endl;
+	}
 }

@@ -29,6 +29,7 @@ class CMakeBuild(build_ext):
                 raise RuntimeError("CMake >= 3.1.0 is required on Windows")
 
         for ext in self.extensions:
+            print("##################################")
             self.build_extension(ext)
 
     def build_extension(self, ext):
@@ -57,6 +58,9 @@ class CMakeBuild(build_ext):
                                                               self.distribution.get_version())
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+        print("############################################################")
+        print(cmake_args)
+        print(build_args)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
@@ -69,4 +73,6 @@ setup(
     cmdclass=dict(build_ext=CMakeBuild),
     packages=["pyflagsercontain"],
     zip_safe=False,
+    install_requires=["numpy>=1.19.4",
+                      "scipy>=1.5.4",]
 )
