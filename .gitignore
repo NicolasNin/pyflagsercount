@@ -1,0 +1,15 @@
+pyflagsercontain.egg-info/
+build/
+dist/
+doc/
+extra/
+tests/
+test_env/
+sparsehash/
+pybind11/
+.vscode/
+MANIFEST.in
+tox.ini
+pyflagsercontain/__pycache__
+pyflagsercontain/*.so
+*.pyc
