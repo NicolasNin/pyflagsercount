@@ -2,21 +2,25 @@
 int main(int argc, char** argv){
 
 
-	int N=3;
-	auto graph = directed_graphv2_t(N);
 
 	//std::vector<vertex_index_t> row{0,0,1};
 	//std::vector<vertex_index_t> col{1,2,2};
 	// undirected triangle
-	std::vector<vertex_index_t> row{0,1,2};
-	std::vector<vertex_index_t> col{1,2,0};
-	std::vector<vertex_index_t> data{1,8,1};
-	for (int i=0;i<3;i++)
+//	std::vector<vertex_index_t> row{0,1,2};
+//	std::vector<vertex_index_t> col{1,2,0};
+   // std::vector<vertex_index_t> row{0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 4, 4};
+   // std::vector<vertex_index_t> col{1, 2, 3, 4, 0, 3, 4, 0, 1, 0, 1, 2};
+    std::vector<vertex_index_t> row{0, 0, 1, 1, 1, 2, 2, 2, 3};
+    std::vector<vertex_index_t> col{1, 2, 0, 2, 3, 0, 1, 3, 0};
+    int N=4;
+	auto graph = directed_graphv2_t(N);
+
+	for (int i=0;i<row.size();i++)
 		graph.add_edge(row[i],col[i]);
 
 	std::cout<< "Matrix"<<std::endl;
-	for (vertex_index_t i=0;i<3;i++){
-		for (vertex_index_t j=0;j<3;j++){
+	for (vertex_index_t i=0;i<N;i++){
+		for (vertex_index_t j=0;j<N;j++){
 			if (graph.is_connected_by_an_edge(i,j))
 			{std::cout<< 1<< " ";}
 			else{std::cout<< "0 ";}
@@ -25,7 +29,9 @@ int main(int argc, char** argv){
 	}
 	std::cout<< "------------------"<<std::endl;
 	std::vector<std::vector<size_t>> a =  count_cells_max(graph);
-	
+    vertex_index_t t[3]={1,2,0};
+    
+	std::cout<<" in between "<< std::endl<<graph.vertex_in_between(t,3)<<std::endl;
 	/*
 	auto out0=graph.get_in(2);
 	std::cout<<"OUT 0" <<std::endl;

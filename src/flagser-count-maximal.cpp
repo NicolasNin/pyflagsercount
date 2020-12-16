@@ -137,24 +137,24 @@ public:
 		if (candidates.size()<= 0) return 0;
 		// if we found one candidate and its
 		if (simplex_size == 2) return 1;
-
+		
 		for (int i=0;i<candidates.size();i++){
 			vertex_index_t c = candidates[i];
 			bool do_in = 1;
 			bool found = 1;
 			for (int i=1;i< simplex_size-1;i++){
-					if ( do_in && not this->is_connected_by_an_edge(simplex[i],c))
-					{
-						if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
-						do_in=0;
+	//		std::cout<< i << " " <<simplex[i]<< " "<< c <<" " <<this->is_connected_by_an_edge(simplex[i],c) << " "<<this->is_connected_by_an_edge(c,simplex[i])<<std::endl;
+					if (do_in){
+						if (not this->is_connected_by_an_edge(simplex[i],c)){
+							if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
+							do_in=0;
+						}
 					}
-					else
-					{
+					else{
 						if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
 					}
-					
-				}
-				if (found) return 1;
+			}
+			if (found) return 1;
 		}
 		// if no candidate is good return false
 		return 0;
@@ -221,8 +221,8 @@ private:
 		
 		if (prefix_size>0 && possible_prev_vertices.size()==0 && possible_next_vertices.size()==0 && not graph.vertex_in_between(prefix,prefix_size))	is_max=1;
 	
-		/*		
-		if (is_max == 1){ 
+				
+		if (is_max == 1 && thread_id==1){ 
 		std::cout<< "IS MAX ?"<<std::endl;
 		std::cout<< "prefix size "<<prefix_size  <<std::endl;
 		
@@ -231,7 +231,7 @@ private:
 				}
 				std::cout<<std::endl;
 			}
-		*/
+		
 		if (prefix_size >= min_dimension + 1) {
 			 (*f)(prefix, prefix_size,is_max); 
 			 }

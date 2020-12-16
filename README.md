@@ -1,5 +1,10 @@
 # pyflagsercount
 
+The goal is to offer some python binding to flagser c++ code, with some added features.
+- compute simplex count over a filtration
+- compute maximal simplex count
+- return list of simplex as a simplex tree(one tree for each vertices)
+
 Project derived from Jason P. Smith pyflagsercontain (itself derived from Daniel Luetgehetmann flagser (itself derived from ripser))
 
 
