@@ -16,10 +16,16 @@ You will need
 - pybind11 as a subdirectory
 
 Do at the root of the project:  
-git clone https://github.com/sparsehash/sparsehash  
-compile it, no need to install: 
-cd sparsehash && ./configure && make && cd ..  
+`$ git clone https://github.com/sparsehash/sparsehash`  
+You have to then compile it, no need to install:  
+`$ cd sparsehash && ./configure && make && cd ..  `
 
-git clone https://github.com/pybind/pybind11.git  
+`$ git clone https://github.com/pybind/pybind11.git `
 
 pybind11 is header only so no compilation is needed  
+
+## Installation from wheel
+
+In dist/ you have some wheel package that may be suitable for your system. You can try to install it this way:  
+`$ pip install pyflagsercount-0.0.1-cp36-cp36m-linux_x86_64.whl `  
+For linux for example 
