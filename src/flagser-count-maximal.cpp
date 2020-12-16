@@ -133,8 +133,9 @@ public:
 				if (this->is_connected_by_an_edge(out_start[i],end)){ 
 					candidates.push_back(out_start[i]);}}
 		}
-
-		if (candidates.size()<= 0) return 0;
+		for (int i=0;i<candidates.size();i++) std::cout<< candidates[i]<< " : ";
+		//std::cout<<std::endl;
+		//if (candidates.size()<= 0) return 0;
 		// if we found one candidate and its
 		if (simplex_size == 2) return 1;
 		
@@ -143,15 +144,16 @@ public:
 			bool do_in = 1;
 			bool found = 1;
 			for (int i=1;i< simplex_size-1;i++){
-	//		std::cout<< i << " " <<simplex[i]<< " "<< c <<" " <<this->is_connected_by_an_edge(simplex[i],c) << " "<<this->is_connected_by_an_edge(c,simplex[i])<<std::endl;
+			//std::cout<< i<<" "<<do_in << " " <<simplex[i]<< " "<< c <<" " <<this->is_connected_by_an_edge(simplex[i],c) << " "<<this->is_connected_by_an_edge(c,simplex[i])<<std::endl;
 					if (do_in){
 						if (not this->is_connected_by_an_edge(simplex[i],c)){
-							if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
+							if (not this->is_connected_by_an_edge(c,simplex[i])) {found=0;break;}
+
 							do_in=0;
 						}
 					}
 					else{
-						if (not this->is_connected_by_an_edge(c,simplex[i])) found=0;break;
+						if (not this->is_connected_by_an_edge(c,simplex[i])) {found=0;break;}
 					}
 			}
 			if (found) return 1;
@@ -218,20 +220,20 @@ private:
 						  const std::vector<vertex_index_t>& possible_prev_vertices) {
 		// As soon as we have the correct dimension, execute f
 		bool is_max = 0;
-		
 		if (prefix_size>0 && possible_prev_vertices.size()==0 && possible_next_vertices.size()==0 && not graph.vertex_in_between(prefix,prefix_size))	is_max=1;
+		
+		////////////
+		// if ( thread_id==2){ 
+		// std::cout<< "prefix size "<<prefix_size  <<std::endl;
+		// 	std::cout<<possible_prev_vertices.size()<<" "<< possible_next_vertices.size() << " "<<  "a" << std::endl;
+		
+		// 	for (auto i =0;i<prefix_size;i++){
+		// 		std::cout<< prefix[i]<< " " ; 
+		// 		}
+		// 	std::cout<<std::endl;
 	
-				
-		if (is_max == 1 && thread_id==1){ 
-		std::cout<< "IS MAX ?"<<std::endl;
-		std::cout<< "prefix size "<<prefix_size  <<std::endl;
-		
-			for (auto i =0;i<prefix_size;i++){
-				std::cout<< prefix[i]<< " " ; 
-				}
-				std::cout<<std::endl;
-			}
-		
+		// 	}
+		//////////
 		if (prefix_size >= min_dimension + 1) {
 			 (*f)(prefix, prefix_size,is_max); 
 			 }

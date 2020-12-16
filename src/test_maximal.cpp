@@ -10,9 +10,13 @@ int main(int argc, char** argv){
 //	std::vector<vertex_index_t> col{1,2,0};
    // std::vector<vertex_index_t> row{0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 4, 4};
    // std::vector<vertex_index_t> col{1, 2, 3, 4, 0, 3, 4, 0, 1, 0, 1, 2};
-    std::vector<vertex_index_t> row{0, 0, 1, 1, 1, 2, 2, 2, 3};
-    std::vector<vertex_index_t> col{1, 2, 0, 2, 3, 0, 1, 3, 0};
-    int N=4;
+   // std::vector<vertex_index_t> row{0, 0, 1, 1, 1, 2, 2, 2, 3};
+    //std::vector<vertex_index_t> col{1, 2, 0, 2, 3, 0, 1, 3, 0};
+
+  std::vector<vertex_index_t> row   {0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 4};
+ std::vector<vertex_index_t> col{1, 3, 4, 2, 3, 4, 0, 1, 3, 4, 2, 4, 0, 2, 3};
+
+    int N=5;
 	auto graph = directed_graphv2_t(N);
 
 	for (int i=0;i<row.size();i++)
@@ -29,9 +33,9 @@ int main(int argc, char** argv){
 	}
 	std::cout<< "------------------"<<std::endl;
 	std::vector<std::vector<size_t>> a =  count_cells_max(graph);
-    vertex_index_t t[3]={1,2,0};
+    vertex_index_t t[4]={2,4,0,3};
     
-	std::cout<<" in between "<< std::endl<<graph.vertex_in_between(t,3)<<std::endl;
+	std::cout<<" in between "<< std::endl<<graph.vertex_in_between(t,4)<<std::endl;
 	/*
 	auto out0=graph.get_in(2);
 	std::cout<<"OUT 0" <<std::endl;
