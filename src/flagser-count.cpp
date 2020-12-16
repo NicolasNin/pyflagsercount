@@ -117,7 +117,7 @@ private:
 	                      const std::vector<vertex_index_t>& possible_next_vertices, vertex_index_t* prefix,
 	                      unsigned short prefix_size, int thread_id, size_t number_of_vertices, std::vector<std::vector<std::vector<vertex_index_t>>>& contain_counts) {
 		// As soon as we have the correct dimension, execute f
-		if (prefix_size >= min_dimension + 1) { (*f)(prefix, prefix_size); }
+		if (prefix_size >= min_dimension + 1) { (*f)(prefix, prefix_size,0); }
         for(int i = 0; i < prefix_size; i++){
             while(contain_counts[thread_id][prefix[i]].size() < prefix_size){
                 contain_counts[thread_id][prefix[i]].push_back(0);
@@ -167,7 +167,7 @@ private:
 
 struct cell_counter_t {
 	void done() {}
-	void operator()(vertex_index_t* first_vertex, int size) {
+	void operator()(vertex_index_t* first_vertex, int size,int childrens) {
 		// Add (-1)^size to the Euler characteristic
 		if (size & 1)
 			ec++;
@@ -185,6 +185,7 @@ private:
 	int64_t ec = 0;
 	std::vector<size_t> cell_counts;
 };
+
 
 //##############################################################################
 //COUNT CELL FUNCTION
@@ -220,4 +221,60 @@ std::vector<std::vector<vertex_index_t>> count_cells(directed_graph_t& graph) {
     }
 
 	return contain_counts[0];
+}
+//##############################################################################
+//build simplex tree function and struct
+struct tree_builder_t {
+	void done() {}
+	int number_vertices;
+	tree_builder_t(int N):number_vertices(N),vertex_list(N), cumulative_children(N) {}
+
+	void operator()(vertex_index_t* first_vertex, int size,int children_size) {
+		// Add (-1)^size to the Euler characteristic
+		vertex_index_t start=first_vertex[0];
+		if (vertex_list[start].size()<size)
+			vertex_list[start].resize(size);
+		vertex_list[start][size].push_back(first_vertex[size-1]);
+
+		if (cell_counts.size() < size) { cell_counts.resize(size, 0); }
+			cell_counts[size - 1]++;
+	}
+
+	int64_t euler_characteristic() const { return ec; }
+	std::vector<size_t> cell_count() const { return cell_counts; }
+
+private:
+	int64_t ec = 0;
+	std::vector<size_t> cell_counts;
+	std::vector<std::vector< std::vector<vertex_index_t>>> vertex_list;
+	std::vector<std::vector< vertex_index_t>> cumulative_children;
+
+};
+
+void grow_trees(directed_graph_t& graph) {
+	std::cout<<"Grow Trees"<<std::endl;
+	directed_flag_complex_t complex(graph);
+
+   std::vector<vertex_index_t> do_vertices;
+   for(int i = 0; i < graph.vertex_number(); i++){ do_vertices.push_back(i); }
+
+// we will change this at some point atm lets keep it
+std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_THREADS,
+							std::vector<std::vector<vertex_index_t>>(graph.vertex_number(),
+							std::vector<vertex_index_t>(0)));
+
+	std::array<tree_builder_t*, PARALLEL_THREADS> tree_builder;
+	for (int i = 0; i < PARALLEL_THREADS; i++)
+		tree_builder[i] = new tree_builder_t(graph.vertex_number());
+
+	std::array<cell_counter_t*, PARALLEL_THREADS> cell_counter;
+	for (int i = 0; i < PARALLEL_THREADS; i++)
+		cell_counter[i] = new cell_counter_t();
+
+		complex.for_each_cell(cell_counter, do_vertices, contain_counts, 0, 10000);
+		
+	//complex.for_each_cell(tree_builder, do_vertices, contain_counts, 0, 10000);
+
+
+
 }

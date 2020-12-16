@@ -21,7 +21,7 @@ typedef int64_t index_t;
 typedef float value_t;
 
 #ifndef PARALLEL_THREADS
-#define PARALLEL_THREADS 8
+#define PARALLEL_THREADS 72
 #endif
 
 

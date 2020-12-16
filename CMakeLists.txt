@@ -5,6 +5,9 @@ project(pyflagsercount VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+#flagser_count for contain and simplices
+add_executable(flagser-count src/test_flagser_count.cpp)
+
 
 # flagser-count-maximal
 add_executable(flagser-count-maximal src/test_maximal.cpp)

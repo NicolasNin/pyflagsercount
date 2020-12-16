@@ -1,4 +1,5 @@
 pyflagsercontain.egg-info/
+pyflagsercount.egg-info/
 build/
 doc/
 extra/
@@ -12,3 +13,4 @@ tox.ini
 pyflagsercontain/__pycache__
 pyflagsercontain/*.so
 *.pyc
+dist/
