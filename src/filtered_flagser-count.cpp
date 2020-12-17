@@ -482,6 +482,7 @@ struct tree_builder_t {
 
 	std::vector<size_t> cell_count() const { return cell_counts; }
 	std::vector<std::vector< std::vector<vertex_index_t>>> get_vertex() const {return vertex_list;}
+	std::vector<std::vector< std::vector<vertex_index_t>>> get_cumulative_children() const {return cumulative_children;}
 
 	void display_cell_count(){
 		for (int i=0;i<cell_counts.size();i++)
@@ -506,7 +507,8 @@ private:
 
 };
 
-std::vector<std::vector< std::vector<vertex_index_t>>> grow_trees(directed_graph_t& graph) {
+std::pair<std::vector<std::vector< std::vector<vertex_index_t>>>,
+std::vector<std::vector< std::vector<vertex_index_t>>>> grow_trees(directed_graph_t& graph) {
 	std::cout<<"Grow Trees"<<std::endl;
 	directed_flag_complex_t complex(graph);
 
@@ -525,23 +527,21 @@ std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_TH
 
 	complex.for_each_cell(tree_builder, do_vertices, contain_counts, 0, 10000);
 
-	for (int i=0;i<PARALLEL_THREADS;i++)
-		tree_builder[i]->display_cell_count();
-	
-	tree_builder[0]->display_tree(0);
-	tree_builder[1]->display_tree(1);
-	tree_builder[2]->display_tree(2);
 
 std::vector<std::vector< std::vector<vertex_index_t>>> merged_vertex(graph.vertex_number());
+std::vector<std::vector< std::vector<vertex_index_t>>> merged_child(graph.vertex_number());
+
 for (int i=0;i<PARALLEL_THREADS;i++){
 	//we can improve this later
 	auto v = tree_builder[i]->get_vertex();
+	auto c = tree_builder[i]->get_cumulative_children();
 	for (int j=0;j<v.size();j++){
 		if (v[j].size()>0){ 
-			merged_vertex[j]=v[j];};
+			merged_vertex[j]=v[j];;
+			merged_child[j]=c[j];}
 	}
 
 }
 
-return merged_vertex;
+return std::make_pair(merged_vertex, merged_child);
 }
