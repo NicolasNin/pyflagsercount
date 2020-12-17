@@ -65,15 +65,21 @@ def find_maximal_simplices_from_all(simplices, simplices_higher_dim):
     return simplices[np.logical_not(np.isin(one_index, simplices_higher_dim_stacked)), :]
 
 
-all_len=[]
-for i in range(10):
-     all_len.append(np.array([len(x) for x in a[i]]))
-    all_len=pyflagsercount.listoflistToarray(all_len)
-
-m=np.random.random((10,10))<0.5
+N=1000
+p=0.1
+m=np.random.random((N,N))<p
 np.fill_diagonal(m,False)
-print(m.astype(int))
-print(pyflagser.flagser_count_unweighted(m))
+#print(m.astype(int))
+s=np.array(pyflagser.flagser_count_unweighted(m))
+print(s)
+tree=pyflagsercount.flagser_simplex_tree(m)
+all_lenT=[]
+for i in range(m.shape[0]):
+    all_lenT.append(np.array([len(x) for x in treeTran[i]]))
+all_lenT=pyflagsercount.listoflistToarray(all_lenT)
+print(all_lenT.sum(axis=0))
+
+
 _,ls=flagcount.flagser(m,return_simplices=True)
 print(pyflagsercount.flagser_maximal(m))
 for i in range (len(ls)-1):

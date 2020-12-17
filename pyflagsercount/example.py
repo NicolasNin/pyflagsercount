@@ -5,6 +5,7 @@ import pyflagser #to compare result
 
 N=1000
 p=0.1
+np.random.seed(0) 
 m=np.random.random((N,N))<p
 np.fill_diagonal(m,False)
 
@@ -18,7 +19,7 @@ def all_width(tree_vertex):
     for root in  tree_vertex:
         all_len.append(np.array([len(x) for x in root]))
     return pyflagsercount.listoflistToarray(all_len)
-all_w=all_width(tree)
+all_w=all_width(tree_vertex)
 # since all the node of the tree are a simplex we can sum this and get back simplex count
 assert (np.all(all_w.sum(axis=0)== simplex_count))
 """
