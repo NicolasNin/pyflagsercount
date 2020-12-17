@@ -174,12 +174,12 @@ private:
 	                      unsigned short prefix_size, int thread_id, size_t number_of_vertices, std::vector<std::vector<std::vector<vertex_index_t>>>& contain_counts) {
 		// As soon as we have the correct dimension, execute f
 		if (prefix_size >= min_dimension + 1) { (*f)(prefix, prefix_size,possible_next_vertices.size()); }
-        for(int i = 0; i < prefix_size; i++){
-            while(contain_counts[thread_id][prefix[i]].size() < prefix_size){
-                contain_counts[thread_id][prefix[i]].push_back(0);
-            }
-            contain_counts[thread_id][prefix[i]][prefix_size-1]++;
-        }
+        // for(int i = 0; i < prefix_size; i++){
+        //     while(contain_counts[thread_id][prefix[i]].size() < prefix_size){
+        //         contain_counts[thread_id][prefix[i]].push_back(0);
+        //     }
+        //     contain_counts[thread_id][prefix[i]][prefix_size-1]++;
+        // }
 
 		// If this is the last dimension we are interested in, exit this branch
 		if (prefix_size == max_dimension + 1) return;

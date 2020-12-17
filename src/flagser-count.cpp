@@ -118,7 +118,8 @@ private:
 	                      unsigned short prefix_size, int thread_id, size_t number_of_vertices, std::vector<std::vector<std::vector<vertex_index_t>>>& contain_counts) {
 		// As soon as we have the correct dimension, execute f
 		if (prefix_size >= min_dimension + 1) { (*f)(prefix, prefix_size, possible_next_vertices.size()); }
-        for(int i = 0; i < prefix_size; i++){
+        
+		for(int i = 0; i < prefix_size; i++){
             while(contain_counts[thread_id][prefix[i]].size() < prefix_size){
                 contain_counts[thread_id][prefix[i]].push_back(0);
             }
@@ -232,7 +233,6 @@ struct tree_builder_t {
 	void done() {}
 	int number_vertices;
 	tree_builder_t(int N):number_vertices(N),vertex_list(N), cumulative_children(N) {}
-
 	void operator()(vertex_index_t* first_vertex, int size,vertex_index_t children_size) {
 		vertex_index_t start=first_vertex[0];
 		if (vertex_list[start].size()<size){
