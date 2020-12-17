@@ -6,7 +6,6 @@ extra/
 tests/
 test_env/
 sparsehash/
-pybind11/
 .vscode/
 MANIFEST.in
 tox.ini
