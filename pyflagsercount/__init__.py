@@ -2,7 +2,7 @@
 
 import numpy as np
 import scipy.sparse as sparse
-from .pyflagsercount import compute_cell_count,compute_cell_count_filtered,compute_cell_count_maximal
+from .pyflagsercount import compute_cell_count,compute_cell_count_filtered,compute_cell_count_maximal,compute_simplex_tree
 
 def listoflistToarray(l):
     """ convert a list of list of number as a numpy array, fill with 0 when a list has not the same size"""
@@ -26,6 +26,16 @@ def convertCOO(adjacency_matrix, ret_data=True):
         return row,col,value
     else:
         return row,col
+def flagser_simplex_tree(adjacency_matrix):
+    """
+    Return the simplex tree 
+    :param adjacency_matrix: either a numpy 2d square-array with *positive* value for filtration, or a scipy.sparse
+    matrix (will be converted to sparse coo matrix in any case)
+    :return: contains values for each vertex and each dimension
+    """
+    N=adjacency_matrix.shape[0]
+    row,col=convertCOO(adjacency_matrix,ret_data=False)
+    return compute_simplex_tree(N, np.transpose(np.array( (row,col))))
 
 def flagser_contain(adjacency_matrix):
     """

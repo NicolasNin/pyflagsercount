@@ -35,6 +35,18 @@ PYBIND11_MODULE(pyflagsercount, m) {
 
     return cell_count;
   });
+  m.def("compute_simplex_tree", [](vertex_index_t num_vertices,
+                                 std::vector<std::vector<value_t>>& edges) {
+    auto cout_buff = std::cout.rdbuf();
+    auto graph = directed_graph_t(num_vertices);
+    for (auto& edge : edges) {
+        graph.add_edge(edge[0], edge[1]);
+    }
+    std::cout.rdbuf(nullptr);
+    auto cell_count = grow_trees(graph);
+    std::cout.rdbuf(cout_buff);
+    return cell_count;
+  });
 
     m.def("compute_cell_count_filtered", [](vertex_index_t num_vertices,
                                  std::vector<std::vector<value_t>>& edges) {

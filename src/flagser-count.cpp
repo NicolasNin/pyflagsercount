@@ -265,7 +265,6 @@ struct tree_builder_t {
 			}
 			std::cout<<std::endl;
 		}
-
 	}
 private:
 	int64_t ec = 0;
@@ -275,7 +274,7 @@ private:
 
 };
 
-void grow_trees(directed_graph_t& graph) {
+std::vector<std::vector< std::vector<vertex_index_t>>> grow_trees(directed_graph_t& graph) {
 	std::cout<<"Grow Trees"<<std::endl;
 	directed_flag_complex_t complex(graph);
 
@@ -301,4 +300,16 @@ std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_TH
 	tree_builder[1]->display_tree(1);
 	tree_builder[2]->display_tree(2);
 
+std::vector<std::vector< std::vector<vertex_index_t>>> merged_vertex(graph.vertex_number());
+for (int i=0;i<PARALLEL_THREADS;i++){
+	//we can improve this later
+	auto v = tree_builder[i]->get_vertex();
+	for (int j=0;j<v.size();j++){
+		if (v[j].size()>0){ 
+			merged_vertex[j]=v[j];};
+	}
+
+}
+
+return merged_vertex;
 }

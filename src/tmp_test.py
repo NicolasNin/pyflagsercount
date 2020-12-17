@@ -49,9 +49,9 @@ array([[0, 1, 3, 4],
 array([[2, 0, 1, 3, 4],
        [2, 0, 1, 4, 3]])
 
+import flagcount
 
 import numpy as np
-import flagcount
 import pyflagser
 import pyflagsercount
 def unique_identifier(mat):
@@ -65,7 +65,12 @@ def find_maximal_simplices_from_all(simplices, simplices_higher_dim):
     return simplices[np.logical_not(np.isin(one_index, simplices_higher_dim_stacked)), :]
 
 
-m=np.random.random((10000,10000))<0.04
+all_len=[]
+for i in range(10):
+     all_len.append(np.array([len(x) for x in a[i]]))
+    all_len=pyflagsercount.listoflistToarray(all_len)
+
+m=np.random.random((10,10))<0.5
 np.fill_diagonal(m,False)
 print(m.astype(int))
 print(pyflagser.flagser_count_unweighted(m))
