@@ -1,3 +1,2 @@
 cmake
-sparsehash
 libsparsehash-dev
