@@ -10,7 +10,7 @@ pybind11/
 .vscode/
 MANIFEST.in
 tox.ini
-pyflagsercontain/__pycache__
-pyflagsercontain/*.so
+pyflagsercount/__pycache__
+pyflagsercount/*.so
 *.pyc
 dist/

@@ -46,7 +46,7 @@ PYBIND11_MODULE(pyflagsercount, m) {
     auto cell_count = grow_trees(graph);
     std::cout.rdbuf(cout_buff);
     return cell_count;
-  });
+  },py::return_value_policy::reference);
 
     m.def("compute_cell_count_filtered", [](vertex_index_t num_vertices,
                                  std::vector<std::vector<value_t>>& edges) {
