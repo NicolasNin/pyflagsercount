@@ -463,26 +463,54 @@ int main(int argc, char** argv) {
 struct tree_builder_t {
 	void done() {}
 	int number_vertices;
-	tree_builder_t(int N):number_vertices(N),vertex_list(N), cumulative_children(N) {}
+	tree_builder_t(int N):number_vertices(N),vertex_list(N), cumulative_children(N),leaf(N) {}
 
 	void operator()(vertex_index_t* first_vertex, int size,vertex_index_t children_size) {
 		vertex_index_t start=first_vertex[0];
 		if (vertex_list[start].size()<size){
 			vertex_list[start].resize(size);
 			cumulative_children[start].push_back(std::vector<vertex_index_t>{0});
-		}
+			leaf[start].resize(size);
 
+		}
 		vertex_list[start][size-1].push_back(first_vertex[size-1]);
 		vertex_index_t prev=cumulative_children[start][size-1].back();
 		cumulative_children[start][size-1].push_back(children_size + prev);
 
+		if (children_size == 0){
+			//a leaf
+			leaf[start][size-1].push_back(vertex_list[start][size-1].size()-1);
+		}
+
 		if (cell_counts.size() < size) { cell_counts.resize(size, 0); }
 			cell_counts[size - 1]++;
 	}
+	int n_child(int root,int dim ,vertex_index_t parent_idx){
+		return cumulative_children[root][dim][parent_idx+1]-cumulative_children[root][dim][parent_idx];}
+	int first_child(int root,int dim ,vertex_index_t parent_idx){
+		return cumulative_children[root][dim][parent_idx];}
 
+	vertex_index_t parent_idx(vertex_index_t root, int current_dim,vertex_index_t child_idx){
+		auto data=cumulative_children[root][current_dim - 1];
+		auto upper = std::upper_bound(data.begin(), data.end(),child_idx);
+		return std::distance(data.begin(), upper)-1;
+	}
+	std::vector<vertex_index_t> simplexup(vertex_index_t root ,int dim, vertex_index_t idx){
+		std::vector<vertex_index_t> simplex(dim+1);
+		simplex[0]=root;
+		for (int i=dim;i>0;i--){
+			//std::cout<< " I " << idx<< " " << dim << " " << simplex.size()<<std::endl;
+			simplex[i] = vertex_list[root][dim][idx];
+			idx=parent_idx(root,dim,idx);
+			dim--;
+		}
+		return simplex;
+	}
 	std::vector<size_t> cell_count() const { return cell_counts; }
 	std::vector<std::vector< std::vector<vertex_index_t>>> get_vertex() const {return vertex_list;}
 	std::vector<std::vector< std::vector<vertex_index_t>>> get_cumulative_children() const {return cumulative_children;}
+	std::vector<std::vector< std::vector<vertex_index_t>>> get_leaf() const {return leaf;}
+
 
 	void display_cell_count(){
 		for (int i=0;i<cell_counts.size();i++)
@@ -500,13 +528,14 @@ struct tree_builder_t {
 		}
 	}
 private:
-	int64_t ec = 0;
 	std::vector<size_t> cell_counts;
 	std::vector<std::vector< std::vector<vertex_index_t>>> vertex_list;
 	std::vector<std::vector< std::vector<vertex_index_t>>> cumulative_children;
+	std::vector<std::vector< std::vector<vertex_index_t>>> leaf;
 
 };
 
+// function called on a graph instantiate eveything then merge
 std::pair<std::vector<std::vector< std::vector<vertex_index_t>>>,
 std::vector<std::vector< std::vector<vertex_index_t>>>> grow_trees(directed_graph_t& graph) {
 	std::cout<<"Grow Trees"<<std::endl;
@@ -528,20 +557,39 @@ std::vector<std::vector<std::vector<vertex_index_t>>> contain_counts(PARALLEL_TH
 	complex.for_each_cell(tree_builder, do_vertices, contain_counts, 0, 10000);
 
 
+
+std::cout<< "Test tree functions"<<std::endl;
+vertex_index_t root=0;
+int dim=2;
+auto s=tree_builder[0]->simplexup(root,dim,0);
+// std::cout<< "len of s"<< s.size()<<std::endl;
+// for (int i=0;i<s.size();i++)
+// 	std::cout<< s[i]<< " ";
+
+
 std::vector<std::vector< std::vector<vertex_index_t>>> merged_vertex(graph.vertex_number());
 std::vector<std::vector< std::vector<vertex_index_t>>> merged_child(graph.vertex_number());
+std::vector<std::vector< std::vector<vertex_index_t>>> merged_leaf(graph.vertex_number());
 
 for (int i=0;i<PARALLEL_THREADS;i++){
 	//we can improve this later
 	auto v = tree_builder[i]->get_vertex();
 	auto c = tree_builder[i]->get_cumulative_children();
+	auto l = tree_builder[i]->get_leaf();
+
 	for (int j=0;j<v.size();j++){
 		if (v[j].size()>0){ 
-			merged_vertex[j]=v[j];;
-			merged_child[j]=c[j];}
+			 merged_vertex[j]=v[j];;
+			 merged_child[j]=c[j];
+			 merged_leaf[j]=l[j]; 
+			}
+			}
 	}
 
-}
-
+ for (int i=0;i<PARALLEL_THREADS;i++)
+ 	{	
+ 	delete tree_builder[i];
+ 	}
+// std::cout<< "aaa"<<std::endl;
 return std::make_pair(merged_vertex, merged_child);
 }

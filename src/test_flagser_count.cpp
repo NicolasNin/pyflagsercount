@@ -1,4 +1,4 @@
-#import "filtered_flagser-count.cpp"
+#include "filtered_flagser-count.cpp"
 
 int main(){
 
@@ -21,9 +21,12 @@ for (vertex_index_t i=0;i<N;i++){
         }
 std::cout<<std::endl;
 }
-
-grow_trees(graph);
-
-std::cout<<std::thread::hardware_concurrency()<<std::endl;
+auto a=grow_trees(graph);
+int c=0;
+while(c<10){
+    c++;
+for (int i=0;i<10;i++)
+    a=    grow_trees(graph);
+}
     return 0;
 }

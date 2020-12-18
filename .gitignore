@@ -13,3 +13,4 @@ pyflagsercount/__pycache__
 pyflagsercount/*.so
 *.pyc
 dist/
+pybind11_old/
