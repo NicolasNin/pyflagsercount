@@ -74,5 +74,6 @@ setup(
     packages=["pyflagsercount"],
     zip_safe=False,
     install_requires=["numpy>=1.19.4",
-                      "scipy>=1.5.4",]
+                      "scipy>=1.5.4",
+                      "pyflagser"]
 )
